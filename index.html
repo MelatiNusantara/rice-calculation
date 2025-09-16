@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Kalkulator Kelayakan Usaha Tani Padi</title>
+  <style>
+    :root {
+      --pacific-blue: #1B365D; --sustainable-teal: #2D7D7D; --coral-innovation: #FF6B47;
+      --pearl-white: #F8F9FA; --pearl-light: #FFFFFF; --text-secondary: #666; --border-light: #E8F4F8;
+    }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--pearl-white); margin: 0; padding: 20px; color: var(--pacific-blue); }
+    .container { max-width: 900px; margin: auto; background: var(--pearl-light); padding: 40px; border-radius: 14px; box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+    h1 { text-align: center; color: var(--pacific-blue); font-size: 28px; margin-bottom: 25px; }
+    h2 { color: var(--sustainable-teal); border-left: 6px solid var(--coral-innovation); padding-left: 12px; margin-top: 35px; margin-bottom: 20px; font-size: 20px; }
+    h3 { font-size: 16px; color: var(--pacific-blue); margin: 15px 0 10px; }
+    .input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 25px; margin-bottom: 20px; }
+    .input-group { display: flex; flex-direction: column; }
+    label { margin-bottom: 6px; font-weight: 600; font-size: 14px; color: var(--pacific-blue); }
+    input { padding: 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 15px; transition: border-color 0.3s; }
+    input:focus { border-color: var(--sustainable-teal); outline: none; }
+    button { display: block; width: 100%; padding: 15px; background: var(--coral-innovation); color: #fff; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; transition: background-color 0.3s; }
+    button:hover { background: #e25838; }
+    .output-section { margin-top: 30px; padding: 25px; border-radius: 12px; background-color: var(--pearl-white); border: 1px solid var(--border-light); display: none; }
+    .output-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 20px; }
+    .result-card { background-color: var(--pearl-light); padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); border-top: 4px solid var(--sustainable-teal); }
+    .result-card h3 { margin: 0 0 12px; }
+    .result-card p { margin: 6px 0; font-size: 16px; font-weight: bold; color: #333; }
+    .result-card .label { display: block; font-size: 12px; font-weight: normal; color: var(--text-secondary); }
+    .summary-card { grid-column: 1 / -1; border-top-color: var(--coral-innovation); }
+    .good { color: #27ae60; } .bad { color: #e74c3c; }
+    .packaging-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin-top: 10px; }
+    .packaging-grid label { font-size: 13px; margin-bottom: 4px; }
+    .packaging-grid input { padding: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🌾 Kalkulator Kelayakan Usaha Tani Padi</h1>
+
+    <form id="farmCalculator">
+      <h2>🌱 Parameter Lahan & Produksi</h2>
+      <div class="input-grid">
+        <div class="input-group"><label for="luasLahan">Luas Cluster (ha)</label><input type="number" id="luasLahan" value="870.5" step="0.1" required></div>
+        <div class="input-group"><label for="produktivitasGKP">Produktivitas GKP (ton/ha)</label><input type="number" id="produktivitasGKP" value="5" step="0.1" required></div>
+        <div class="input-group"><label for="indexTanam">Index Tanam (kali/tahun)</label><input type="number" id="indexTanam" value="2" step="1" required></div>
+      </div>
+
+      <h2>💰 Parameter Biaya On-Farm (per ha per siklus)</h2>
+      <div class="input-grid">
+        <div class="input-group"><label for="biayaTenagaKerja">Tenaga Kerja</label><input type="number" id="biayaTenagaKerja" value="5200000" required></div>
+        <div class="input-group"><label for="biayaLogistik">Logistik</label><input type="number" id="biayaLogistik" value="3054000" required></div>
+        <div class="input-group"><label for="biayaSewa">Sewa/Borongan</label><input type="number" id="biayaSewa" value="5000000" required></div>
+        <div class="input-group"><label for="biayaAdmin">Administrasi</label><input type="number" id="biayaAdmin" value="371112" required></div>
+        <div class="input-group"><label for="hargaGKP">Harga Jual GKP (Rp/kg)</label><input type="number" id="hargaGKP" value="4500" required></div>
+      </div>
+      <button type="button" onclick="calculate()">Hitung Kelayakan Awal</button>
+    </form>
+
+    <div id="outputSection" class="output-section">
+      <h2>📊 Hasil Analisis On-Farm</h2>
+      <div class="output-grid">
+        <div class="result-card" id="outputPerHektar"></div>
+        <div class="result-card" id="outputTotalCluster"></div>
+      </div>
+    </div>
+
+    <div id="millingSection" class="output-section">
+      <h2>🏭 Parameter Penggilingan & Penjualan</h2>
+      <div class="input-grid">
+        <div class="input-group"><label for="rendemenGKG">Rendemen GKP ➜ GKG (%)</label><input type="number" id="rendemenGKG" value="86.02" step="0.01" required></div>
+        <div class="input-group"><label for="rendemenBeras">Rendemen GKG ➜ Beras (%)</label><input type="number" id="rendemenBeras" value="62.74" step="0.01" required></div>
+        <div class="input-group"><label for="proporsiMedium">Proporsi Beras Medium (%)</label><input type="number" id="proporsiMedium" value="75" step="1" required></div>
+        <div class="input-group"><label for="proporsiPremium">Proporsi Beras Premium (%)</label><input type="number" id="proporsiPremium" value="25" step="1" required></div>
+        <div class="input-group"><label for="biayaProses">Biaya Proses (Rp/kg GKP)</label><input type="number" id="biayaProses" value="700" required></div>
+      </div>
+      
+      <h3>Harga Jual per Karung (Rp)</h3>
+      <div class="packaging-grid">
+        <div class="input-group"><label for="hargaMedium5">Medium 5kg</label><input type="number" id="hargaMedium5" value="59000" required></div>
+        <div class="input-group"><label for="hargaMedium10">Medium 10kg</label><input type="number" id="hargaMedium10" value="117000" required></div>
+        <div class="input-group"><label for="hargaMedium25">Medium 25kg</label><input type="number" id="hargaMedium25" value="292500" required></div>
+        <div class="input-group"><label for="hargaPremium5">Premium 5kg</label><input type="number" id="hargaPremium5" value="64000" required></div>
+        <div class="input-group"><label for="hargaPremium10">Premium 10kg</label><input type="number" id="hargaPremium10" value="127000" required></div>
+        <div class="input-group"><label for="hargaPremium25">Premium 25kg</label><input type="number" id="hargaPremium25" value="317500" required></div>
+      </div>
+
+      <button type="button" onclick="calculateMilling()">Hitung Analisis Bisnis Lengkap</button>
+
+      <div id="millingOutputContainer" style="display:none; margin-top:30px;">
+        <h2>📈 Hasil Akhir Proses Bisnis (Hulu-Hilir)</h2>
+        <div class="output-grid">
+          <div class="result-card" id="outputMillingResult"></div>
+          <div class="result-card" id="outputPackaging"></div>
+          <div class="result-card summary-card" id="outputFinancialSummary"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Variabel global untuk menyimpan hasil on-farm
+let totalBiaya_tahunan = 0;
+let totalKeuntunganOnFarm_tahunan = 0;
+
+function formatAngka(angka) { return new Intl.NumberFormat('id-ID').format(angka); }
+function formatRupiah(angka) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka); }
+
+function calculate() {
+    const luasLahan = parseFloat(document.getElementById('luasLahan').value);
+    const produktivitasGKP = parseFloat(document.getElementById('produktivitasGKP').value);
+    const indexTanam = parseFloat(document.getElementById('indexTanam').value);
+    const biayaTenagaKerja = parseFloat(document.getElementById('biayaTenagaKerja').value);
+    const biayaLogistik = parseFloat(document.getElementById('biayaLogistik').value);
+    const biayaSewa = parseFloat(document.getElementById('biayaSewa').value);
+    const biayaAdmin = parseFloat(document.getElementById('biayaAdmin').value);
+    const hargaGKP = parseFloat(document.getElementById('hargaGKP').value);
+
+    const totalBiaya_perHa = biayaTenagaKerja + biayaLogistik + biayaSewa + biayaAdmin;
+    const produksiGKP_kg_perHa = produktivitasGKP * 1000;
+    const penerimaan_perHa = produksiGKP_kg_perHa * hargaGKP;
+    const keuntungan_perHa = penerimaan_perHa - totalBiaya_perHa;
+    const hppGKP_perKg = totalBiaya_perHa / produksiGKP_kg_perHa;
+    const rcRatio = penerimaan_perHa / totalBiaya_perHa;
+
+    const totalProduksiGKP_tahunan = luasLahan * produktivitasGKP * indexTanam;
+    totalBiaya_tahunan = luasLahan * totalBiaya_perHa * indexTanam;
+    totalKeuntunganOnFarm_tahunan = luasLahan * keuntungan_perHa * indexTanam;
+
+    document.getElementById('outputSection').style.display = 'block';
+    document.getElementById('millingSection').style.display = 'block';
+
+    document.getElementById('outputPerHektar').innerHTML = `
+        <h3>Analisis per Hektar (per Siklus)</h3>
+        <p>${formatRupiah(totalBiaya_perHa)}<span class="label">Total Biaya Budidaya</span></p>
+        <p>${formatRupiah(hppGKP_perKg)} / kg<span class="label">HPP GKP</span></p>
+        <p class="${rcRatio >= 1 ? 'good' : 'bad'}">${rcRatio.toFixed(2)}<span class="label">R/C Ratio (jika GKP dijual @${formatRupiah(hargaGKP)})</span></p>
+    `;
+
+    document.getElementById('outputTotalCluster').innerHTML = `
+        <h3>Proyeksi Total Cluster (per Tahun)</h3>
+        <p>${totalProduksiGKP_tahunan.toFixed(2)} ton<span class="label">Target Produksi GKP Tahunan</span></p>
+        <p>${formatRupiah(totalBiaya_tahunan)}<span class="label">Total Biaya Budidaya Tahunan</span></p>
+        <p class="good">${formatRupiah(totalKeuntunganOnFarm_tahunan)}<span class="label">Total Keuntungan (jika semua GKP dijual)</span></p>
+    `;
+
+    document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth' });
+}
+
+function calculateMilling(){
+    // === 1. AMBIL SEMUA INPUT ===
+    const luasLahan = parseFloat(document.getElementById('luasLahan').value);
+    const produktivitasGKP = parseFloat(document.getElementById('produktivitasGKP').value);
+    const indexTanam = parseFloat(document.getElementById('indexTanam').value);
+    const totalGKP_ton = luasLahan * produktivitasGKP * indexTanam;
+    const totalGKP_kg = totalGKP_ton * 1000;
+    
+    const rendemenGKG = parseFloat(document.getElementById('rendemenGKG').value) / 100;
+    const rendemenBeras = parseFloat(document.getElementById('rendemenBeras').value) / 100;
+    const proporsiMedium = parseFloat(document.getElementById('proporsiMedium').value) / 100;
+    const proporsiPremium = parseFloat(document.getElementById('proporsiPremium').value) / 100;
+    const biayaProses = parseFloat(document.getElementById('biayaProses').value);
+    
+    const hargaMedium5 = parseFloat(document.getElementById('hargaMedium5').value);
+    const hargaMedium10 = parseFloat(document.getElementById('hargaMedium10').value);
+    const hargaMedium25 = parseFloat(document.getElementById('hargaMedium25').value);
+    const hargaPremium5 = parseFloat(document.getElementById('hargaPremium5').value);
+    const hargaPremium10 = parseFloat(document.getElementById('hargaPremium10').value);
+    const hargaPremium25 = parseFloat(document.getElementById('hargaPremium25').value);
+
+    // === 2. KALKULASI PRODUKSI ===
+    const totalGKG_ton = totalGKP_ton * rendemenGKG;
+    const totalBeras_ton = totalGKG_ton * rendemenBeras;
+    const totalBeras_kg = totalBeras_ton * 1000;
+    const totalBerasMedium_kg = totalBeras_kg * proporsiMedium;
+    const totalBerasPremium_kg = totalBeras_kg * proporsiPremium;
+    
+    const packMediumProp = { '5kg': 0.25, '10kg': 0.25, '25kg': 0.50 };
+    const packPremiumProp = { '5kg': 0.50, '10kg': 0.25, '25kg': 0.25 };
+    const karungMedium5 = (totalBerasMedium_kg * packMediumProp['5kg']) / 5;
+    const karungMedium10 = (totalBerasMedium_kg * packMediumProp['10kg']) / 10;
+    const karungMedium25 = (totalBerasMedium_kg * packMediumProp['25kg']) / 25;
+    const karungPremium5 = (totalBerasPremium_kg * packPremiumProp['5kg']) / 5;
+    const karungPremium10 = (totalBerasPremium_kg * packPremiumProp['10kg']) / 10;
+    const karungPremium25 = (totalBerasPremium_kg * packPremiumProp['25kg']) / 25;
+
+    // === 3. KALKULASI FINANSIAL LENGKAP ===
+    const totalBiayaProses = totalGKP_kg * biayaProses;
+    const totalBiayaKeseluruhan = totalBiaya_tahunan + totalBiayaProses;
+    const hppBeras_perKg = totalBiayaKeseluruhan / totalBeras_kg;
+
+    // Hitung total pendapatan dari setiap jenis karung
+    const pendapatanMedium5 = karungMedium5 * hargaMedium5;
+    const pendapatanMedium10 = karungMedium10 * hargaMedium10;
+    const pendapatanMedium25 = karungMedium25 * hargaMedium25;
+    const pendapatanPremium5 = karungPremium5 * hargaPremium5;
+    const pendapatanPremium10 = karungPremium10 * hargaPremium10;
+    const pendapatanPremium25 = karungPremium25 * hargaPremium25;
+
+    const totalPendapatanBeras = pendapatanMedium5 + pendapatanMedium10 + pendapatanMedium25 + pendapatanPremium5 + pendapatanPremium10 + pendapatanPremium25;
+    const keuntunganAkhir = totalPendapatanBeras - totalBiayaKeseluruhan;
+    
+    // === 4. TAMPILKAN SEMUA HASIL ===
+    document.getElementById("millingOutputContainer").style.display = "block";
+    
+    document.getElementById("outputMillingResult").innerHTML = `
+        <h3>📦 Hasil Produksi Beras (Tahunan)</h3>
+        <p>${formatAngka(totalBeras_ton.toFixed(2))} ton<span class="label">Total Beras Dihasilkan</span></p>
+        <hr>
+        <p>${formatAngka(totalBerasMedium_kg.toFixed(0))} kg<span class="label">Beras Kualitas Medium</span></p>
+        <p>${formatAngka(totalBerasPremium_kg.toFixed(0))} kg<span class="label">Beras Kualitas Premium</span></p>
+    `;
+
+    document.getElementById("outputPackaging").innerHTML = `
+        <h3>🛍️ Hasil Pengemasan & Keuntungan per Sak</h3>
+        <b>Kualitas Medium:</b>
+        <p>${formatAngka(karungMedium5.toFixed(0))} sak <span class="label">Untung ${formatRupiah(hargaMedium5 - (hppBeras_perKg * 5))}/sak | Total ${formatRupiah(pendapatanMedium5)}</span></p>
+        <p>${formatAngka(karungMedium10.toFixed(0))} sak <span class="label">Untung ${formatRupiah(hargaMedium10 - (hppBeras_perKg * 10))}/sak | Total ${formatRupiah(pendapatanMedium10)}</span></p>
+        <p>${formatAngka(karungMedium25.toFixed(0))} sak <span class="label">Untung ${formatRupiah(hargaMedium25 - (hppBeras_perKg * 25))}/sak | Total ${formatRupiah(pendapatanMedium25)}</span></p>
+        <b>Kualitas Premium:</b>
+        <p>${formatAngka(karungPremium5.toFixed(0))} sak <span class="label">Untung ${formatRupiah(hargaPremium5 - (hppBeras_perKg * 5))}/sak | Total ${formatRupiah(pendapatanPremium5)}</span></p>
+        <p>${formatAngka(karungPremium10.toFixed(0))} sak <span class="label">Untung ${formatRupiah(hargaPremium10 - (hppBeras_perKg * 10))}/sak | Total ${formatRupiah(pendapatanPremium10)}</span></p>
+        <p>${formatAngka(karungPremium25.toFixed(0))} sak <span class="label">Untung ${formatRupiah(hargaPremium25 - (hppBeras_perKg * 25))}/sak | Total ${formatRupiah(pendapatanPremium25)}</span></p>
+    `;
+    
+    document.getElementById("outputFinancialSummary").innerHTML = `
+        <h3>💰 Ringkasan Finansial Hulu-Hilir (Tahunan)</h3>
+        <p class="good">${formatRupiah(totalPendapatanBeras)}<span class="label">Total Pendapatan dari Penjualan Beras</span></p>
+        <p class="bad">${formatRupiah(totalBiayaKeseluruhan)}<span class="label">Total Biaya (Budidaya + Proses)</span></p>
+        <p class="good" style="font-size: 24px;">${formatRupiah(keuntunganAkhir)}<span class="label" style="font-size: 14px;">ESTIMASI KEUNTUNGAN AKHIR</span></p>
+        <hr>
+        <p>${formatRupiah(hppBeras_perKg)}<span class="label">HPP Beras per Kg</span></p>
+        <p class="good" style="font-size: 18px;">+ ${formatRupiah(keuntunganAkhir - totalKeuntunganOnFarm_tahunan)}<span class="label">Peningkatan Keuntungan (Dibanding Jual GKP)</span></p>
+    `;
+
+    document.getElementById("millingOutputContainer").scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+
+</body>
+</html>
